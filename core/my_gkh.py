@@ -1,7 +1,7 @@
 """
 core/my_gkh.py — обогащение данных о торговой точке через портал my-gkh.ru.
 
-Для каждого адреса (в Новосибирске) находит:
+Для произвольного адреса в РФ находит:
   — характеристики дома: год постройки, этажность, материал стен, площадь
   — управляющую компанию (телефон, email)
   — поставщиков коммунальных ресурсов
@@ -70,17 +70,47 @@ def _has_captcha(html: str) -> bool:
     return len(html) < 10000 and "captcha" in html.lower()
 
 
-def _find_houses(lat: float, lng: float) -> List[dict]:
+def _extract_city_slug(address: str) -> str:
+    """Извлечь город из адреса и вернуть slug для API my-gkh.ru."""
+    a = address.lower()
+    # "г Город" or "город Город" or "г.Город"
+    m = re.search(r'(?:^|,\s*)(?:город\s+|г\.?\s*)([а-яё\-]+(?:-[а-яё]+)*)', a)
+    if m:
+        city = m.group(1).strip('.').strip()
+        slug = config.MYGKH_CITY_SLUGS.get(city)
+        if slug:
+            return slug
+        # transliteration fallback
+        table = {
+            'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd',
+            'е': 'e', 'ё': 'e', 'ж': 'zh', 'з': 'z', 'и': 'i',
+            'й': 'y', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n',
+            'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't',
+            'у': 'u', 'ф': 'f', 'х': 'kh', 'ц': 'ts', 'ч': 'ch',
+            'ш': 'sh', 'щ': 'shch', 'ъ': '', 'ы': 'y', 'ь': '',
+            'э': 'e', 'ю': 'yu', 'я': 'ya', '-': '-',
+        }
+        slug = ''.join(table.get(ch, ch) for ch in city)
+        slug = re.sub(r'_+', '-', slug).strip('-')
+        if slug:
+            log.info("MYGKH city slug: %s → %s (transliterated)", city, slug)
+            return slug
+    log.info("MYGKH city slug: not found in %r, fallback to novosibirsk", address)
+    return "novosibirsk"
+
+
+def _find_houses(lat: float, lng: float, address: str = "") -> List[dict]:
     """Ищет дома рядом с координатами через API my-gkh.ru (GeoJSON)."""
+    city_slug = _extract_city_slug(address)
+    houses_api = config.MYGKH_HOUSES_API_TPL.format(city=city_slug)
     r = config.MYGKH_BOUNDS_RADIUS
     bounds = [[lat - r, lng - r], [lat + r, lng + r]]
-    log.info("MYGKH houses: lat=%.5f lng=%.5f bounds=%s", lat, lng, bounds)
+    log.info("MYGKH houses: city=%s lat=%.5f lng=%.5f bounds=%s", city_slug, lat, lng, bounds)
     try:
         s = _get_session()
-        # Сначала заходим на главную, чтобы получить куки
         s.get(config.MYGKH_BASE, timeout=config.MYGKH_TIMEOUT)
         resp = s.post(
-            config.MYGKH_HOUSES_API,
+            houses_api,
             data={
                 "bounds": str(bounds).replace("'", '"'),
                 "isMobileBrowser": "False",
@@ -326,7 +356,7 @@ def enrich(address: str, normalized_address: str, lat: float, lng: float) -> dic
     start = time.monotonic()
     log.info("MYGKH enrich: %r (%.5f, %.5f)", address, lat, lng)
 
-    features = _find_houses(lat, lng)
+    features = _find_houses(lat, lng, normalized_address or address)
     if not features:
         log.info("MYGKH enrich: no houses near (%.5f, %.5f)", lat, lng)
         return {}

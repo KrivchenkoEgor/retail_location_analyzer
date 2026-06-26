@@ -54,8 +54,57 @@ USER_AGENT = "retail-location-analyzer/1.0 (geo research)"
 # my-gkh.ru — портал ГИС ЖКХ для обогащения данными о доме
 # ---------------------------------------------------------------------------
 MYGKH_BASE = "https://my-gkh.ru"
-MYGKH_HOUSES_API = MYGKH_BASE + "/housejsonsearchregioncity/novosibirsk"
+# Город формируется динамически в my_gkh.py из адреса
+MYGKH_HOUSES_API_TPL = MYGKH_BASE + "/housejsonsearchregioncity/{city}"
 MYGKH_HOUSE_INFO = MYGKH_BASE + "/gethouse"
+MYGKH_TIMEOUT = 15            # секунд на запрос к my-gkh.ru
+MYGKH_BOUNDS_RADIUS = 0.005   # градусов вокруг точки для поиска дома (~500м)
+
+# Соответствие названий городов слагам в URL my-gkh.ru
+MYGKH_CITY_SLUGS = {
+    "москва": "moscow",
+    "санкт-петербург": "saint-petersburg",
+    "новосибирск": "novosibirsk",
+    "екатеринбург": "ekaterinburg",
+    "казань": "kazan",
+    "нижний новгород": "nizhny-novgorod",
+    "красноярск": "krasnoyarsk",
+    "самара": "samara",
+    "омск": "omsk",
+    "челябинск": "chelyabinsk",
+    "ростов-на-дону": "rostov-na-donu",
+    "уфа": "ufa",
+    "волгоград": "volgograd",
+    "пермь": "perm",
+    "воронеж": "voronezh",
+    "саратов": "saratov",
+    "тольятти": "tolyatti",
+    "барнаул": "barnaul",
+    "ижевск": "izhevsk",
+    "хабаровск": "khabarovsk",
+    "владивосток": "vladivostok",
+    "иркутск": "irkutsk",
+    "томск": "tomsk",
+    "кемерово": "kemerovo",
+    "новокузнецк": "novokuznetsk",
+    "рязань": "ryazan",
+    "астрахань": "astrakhan",
+    "пенза": "penza",
+    "липецк": "lipetsk",
+    "тула": "tula",
+    "киров": "kirov",
+    "чебоксары": "cheboksary",
+    "калининград": "kaliningrad",
+    "курск": "kursk",
+    "улан-удэ": "ulan-ude",
+    "ставрополь": "stavropol",
+    "махачкала": "makhachkala",
+    "тверь": "tver",
+    "иваново": "ivanovo",
+    "брянск": "bryansk",
+    "белгород": "belgorod",
+}
+
 MYGKH_TIMEOUT = 15            # секунд на запрос к my-gkh.ru
 MYGKH_BOUNDS_RADIUS = 0.005   # градусов вокруг точки для поиска дома (~500м)
 
