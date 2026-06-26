@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.venv/
+venv/
+
+# Build artifacts
+build/
+dist/
+*.spec
+*.dmg
+*.pkg
+
+# Project-specific
+.deps_installed
+retail_analysis_report.xlsx
+Архив.zip
